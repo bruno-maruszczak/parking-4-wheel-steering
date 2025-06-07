@@ -50,21 +50,21 @@ def main():
         x1 = start_x + int(i * spacing_diag)
         x2 = x1 + int(length_diag * math.cos(angle_rad))
         y2 = y_top + int(length_diag * math.sin(angle_rad))
-        draw.line([(x1, y_top), (x2, y2)], fill=0, width=line_thickness)
+        draw.line([(x1, y_top), (x2, y2)], fill=120, width=line_thickness)
 
     # === BOTTOM vertical lines ===
     y_bottom = img_h - 20
     for i in range(6):
         x = start_x + int(i * spacing_vert)
         y1 = y_bottom - int(height_vert)
-        draw.line([(x, y1), (x, y_bottom)], fill=0, width=line_thickness)
+        draw.line([(x, y1), (x, y_bottom)], fill=120, width=line_thickness)
 
     # === RIGHT horizontal lines ===
     x_right = img_w - 20
     for i in range(6):
         y = int(2 * scale) + int(i * spacing_horiz)
         x2 = x_right - int(length_horiz)
-        draw.line([(x_right, y), (x2, y)], fill=0, width=line_thickness)
+        draw.line([(x_right, y), (x2, y)], fill=120, width=line_thickness)
 
     # === MIDDLE vertical lines ===
     y_middle_top = y_top + int(length_diag * math.sin(angle_rad)) + 60
@@ -74,7 +74,7 @@ def main():
 
     for i in range(5):  # only 4 lines, 3 spaces
         x = start_x + int(i * spacing_middle)
-        draw.line([(x, middle_y1), (x, middle_y2)], fill=0, width=line_thickness)
+        draw.line([(x, middle_y1), (x, middle_y2)], fill=120, width=line_thickness)
 
     # === Draw cars ===
     def draw_car(center_x, center_y, w, h, angle_deg):
@@ -148,7 +148,7 @@ def main():
     print(f"Saved: {output_path}")
 
     img_cv = cv2.imread(output_path, cv2.IMREAD_GRAYSCALE)
-    occupancy_grid = (img_cv < 128).astype(np.uint8)
+    occupancy_grid = (img_cv == 0).astype(np.uint8)
 
     # npy
     occupancy_npy_path = os.path.join(output_dir, "parking_layout.npy")
