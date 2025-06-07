@@ -1,0 +1,20 @@
+[project]
+name = "parking-4-wheel-steering"
+version = "0.0.1"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lib","scripts"]
+exclude = ["data"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[project.scripts]
+parking_main = "scripts.parking_main:main"
+map_generate = "scripts.map_generate:main"
