@@ -18,3 +18,4 @@ dependencies = { file = ["requirements.txt"] }
 [project.scripts]
 parking_main = "scripts.parking_main:main"
 map_generate = "scripts.map_generate:main"
+run_mpc = "scripts.run_mpc:main"
