@@ -1,54 +1,22 @@
-#file for mpc planner if was to be implemented
-
 import do_mpc
-import re
+import numpy as np
 import casadi as ca
-import json
+
 
 class MPCModel:
     def __init__(self):
-        self.rotational_inertia = data["rotational_inertia"]
-        self.name = data["name"]
-        self.mass = data["mass"]
-        self.length_f = data["length_f"]
-        self.length_r = data["length_r"]
-        self.width = data["width"]
-
-        self.B_f = data["frontTire"]["B_f"]
-        self.C_f = data["frontTire"]["C_f"]
-        
-        self.B_r = data["rearTire"]["B_r"]
-        self.C_r = data["rearTire"]["C_r"]
-
-        self.C_m = data["control"]["C_m"]
-        self.Cr_0 = data["Cr_0"]
-        self.Cr_2 = data["Cr_2"]
-        self.ptv = data["ptv"]        
-        self.width = 1.0
+        self.rotational_inertia = 1000.
+        self.mass = 1000.
+        self.length_f = 1.5
+        self.length_r = 1.5
+        self.width = 2.3
+        self.engine_power = 1000.
         self.optimal_path = self.track.optimal_path
-
         self.model = self.create_model()
         self.model.setup()
 
     def k(self, s):
         return self.optimal_path.find_curvature_at_s(s)
-
-    
-    def get_lateral_constraint(self, s, n, mu):
-        length = self.length_f + self.length_r
-        width = self.width
-
-        NL = self.track.find_dist_to_band_symb(s, "left")
-        NR = self.track.find_dist_to_band_symb(s, "right")
-        
-        left_constraint = n - length * 0.5 * ca.sin(ca.sign(mu) * mu) + width * 0.5 * ca.cos(mu) - NL
-        right_constraint = - n + length * 0.5 * ca.sin(ca.sign(mu) * mu) + width * 0.5 * ca.cos(mu) - NR
-
-        # TODO what are these for?
-        # left_constraint_trunc = ca.if_else(left_constraint > NL, left_constraint - NL, 0.0)
-        # right_constraint_trunc = ca.if_else(right_constraint > NR, right_constraint - NR, 0.0)
-
-        return left_constraint, right_constraint
     
     def get_motor_force(self, throttle):
         return self.C_m * throttle
@@ -58,11 +26,6 @@ class MPCModel:
         sdot = (x['vx']*ca.cos(x['mu']) - x['vy']*ca.sin(x['mu'])) / (1 - x['n'] * self.k(x['s']))
         return sdot
 
-    def B(self, q_B):
-        x = self.model.x
-        b_dyn = ca.atan(x['vy']/x['vx'])
-        b_kin = ca.atan(x['steering_angle']*self.length_r / (self.length_f + self.length_r))
-        return q_B * (b_dyn - b_kin)**2
 
     def create_model(self) -> do_mpc.model.Model:
         """
