@@ -18,6 +18,8 @@ class MPC:
         self.read_path(filepath)
         S, K = self.calculate_curvature()
         self.k = ca.interpolant("curvature", "linear", [S], K)
+        self.xinterp = ca.interpolant("x", "bspline", [S], self.x)
+        self.yinterp = ca.interpolant("y", "bspline", [S], self.y)
 
         self.model = self.create_model()
         self.model.setup()
