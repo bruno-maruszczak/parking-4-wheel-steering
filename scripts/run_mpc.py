@@ -57,10 +57,11 @@ def main():
         U[i] = u
         if x[0] - path_length > 0.1:
             print("Reached end of path, stopping simulation.")
-            last_step = i
             break
         print(f"sdot {(x[0] - last_s) / MPC.T_STEP}")
+        print(f"s {x[0]}")
         last_s = x[0]
+        last_step = i
 
     with open(Path(os.getcwd()).joinpath('data/out/mpc_results.json'), 'w') as f:
         data = {'x': X[:last_step].tolist(), 'y': Y[:last_step].tolist(), 'u': U[:last_step].tolist()}

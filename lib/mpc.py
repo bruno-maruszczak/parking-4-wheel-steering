@@ -29,7 +29,7 @@ class MPC:
         self.controller._settings.n_robust = MPC.N_ROBUST
         self.controller._settings.nlpsol_opts['ipopt.max_iter'] = 1000
         self.controller._settings.nlpsol_opts['ipopt.print_level'] = 0
-        # self.controller._settings.supress_ipopt_output()
+        self.controller._settings.supress_ipopt_output()
         self.set_constraints()
         self.set_objective()
 
