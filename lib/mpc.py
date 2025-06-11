@@ -12,17 +12,13 @@ class MPC:
     def __init__(self, filepath="./data/out/fourws_one_side_path.json"):
         self.rotational_inertia = 1000.
         self.mass = 1000.
-        self.length_f = 1.5
-        self.length_r = 1.5
         self.width = 2.3
         self.engine_power = 1000.
 
         self.read_path(filepath)
         S, K = self.calculate_curvature()
-        self.k = ca.interpolant(
-            "curvature", "linear", [S],
-            K
-        )
+        self.k = ca.interpolant("curvature", "linear", [S], K)
+
         self.model = self.create_model()
         self.model.setup()
 
@@ -93,31 +89,22 @@ class MPC:
         n = model.set_variable("_x", 'n', shape=(1,1))
         mu = model.set_variable("_x", 'mu', shape=(1,1))
 
-        vx = model.set_variable('_x', 'vx', shape=(1,1))
-        vy = model.set_variable('_x', 'vy', shape=(1,1))
-        r = model.set_variable('_x', 'r', shape=(1,1))
-
         steering_angle = model.set_variable('_x', 'steering_angle', shape=(1,1))
-        throttle = model.set_variable('_x', 'throttle', shape=(1,1))
+        v = model.set_variable('_x', 'velocity', shape=(1,1))
 
         steering_angle_change = model.set_variable('_u', 'steering_angle_change', shape=(1,1))
-        throttle_change = model.set_variable('_u', 'throttle_change', shape=(1,1))
+        acceleration = model.set_variable('_u', 'acceleration', shape=(1,1))
 
-        sdot = (vx*ca.cos(mu) - vy*ca.sin(mu)) / (1 - n * self.k(s))
+        sdot = v*ca.cos(steering_angle/2 - mu) / (1 - n * self.k(s))
 
         model.set_rhs('s', sdot)
-        model.set_rhs('n', 
-            vx*ca.sin(mu) + vy*ca.cos(mu)
-        )
-        model.set_rhs('mu',
-            r - self.k(s)*sdot                    
-        )
-
-        model.set_rhs('throttle', throttle_change)
+        model.set_rhs('n', v*ca.sin(steering_angle/2 - mu))
+        model.set_rhs('mu',v*ca.tan(steering_angle)/2.7 - self.k(s)*sdot)
+        model.set_rhs('velocity', acceleration)
         model.set_rhs('steering_angle', steering_angle_change)
-        
+
         return model
-    
+
     def set_objective(
             self,
             control_costs=[0.1, 0.1],
