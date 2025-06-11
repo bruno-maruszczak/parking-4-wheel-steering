@@ -13,7 +13,10 @@ def experimental_plot():
 
 def main():
 
-    parking_lot_bitmap = ParkingLotBitMap(Path(os.getcwd()).joinpath("data/map/parking_layout.npy"))
+    parking_lot_bitmap = ParkingLotBitMap(
+        Path(os.getcwd()).joinpath("data/map/parking_obstacles.npy"),
+        Path(os.getcwd()).joinpath("data/map/parking_decorations.npy"),
+        )
     parking_lot_bitmap.get_obstacles()
     # print(parking_lot_bitmap.obstacles)
 
@@ -29,7 +32,6 @@ def main():
     
     colours = {"bicycle": "deepskyblue", "4ws": "orange"}
     results = {m: ompl.create_planner(m) for m in ("bicycle", "4ws")}
-
     plot = Plot(parking_lot_bitmap, results, plot_bounds, colours, car)
     plot.static_plot(Path(os.getcwd()).joinpath("data/out/parking_paths.png"))
     # plot.animate(Path(os.getcwd()).joinpath("data/out/parking_animation.gif"))

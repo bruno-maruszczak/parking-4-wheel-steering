@@ -22,10 +22,11 @@ class Car:
         return translate(rect, x, y)
 
 class ParkingLotBitMap:
-    def __init__(self, bitmap_path):
+    def __init__(self, bitmap_path, decorations=None):
         # Wczytaj bitmapę parkingu z pliku numpy
         print(bitmap_path)
         self.bitmap = np.load(bitmap_path)
+        self.decorations = np.load(decorations) if decorations else None
         self.scale = 50 # 50 pixels is one meter
         self.width_px = self.bitmap.shape[1]
         self.length_px = self.bitmap.shape[0]
@@ -57,10 +58,24 @@ class ParkingLotBitMap:
             coords = cnt.squeeze()
             # print(coords)
             poly = Polygon([(x/self.scale, y/self.scale) for [x, y] in coords])
-            if len(coords.shape) != 2 or coords.shape[0] < 3:
-                self.slot_lines.append(poly)
-            else:
-                self.obstacles.append(poly)
+            self.obstacles.append(poly)
+
+        if self.decorations is None:
+            raise ValueError("Decorations array is None. Please provide a valid decorations file.")
+        binary = 1 - self.decorations
+        # Find contours (external only)
+        contours, _ = cv2.findContours(binary, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE) 
+        for cnt in contours:
+            if cv2.contourArea(cnt) > 0.5 * binary.size:
+                continue  # omit the biggest contour (the frame of the bit map)
+
+            # change to Polygon (cv2 contours: (N,1,2) -> (N,2))
+            coords = cnt.squeeze()
+            # print(coords)
+            poly = Polygon([(x/self.scale, y/self.scale) for [x, y] in coords])
+            
+            self.slot_lines.append(poly)
+
 
     def plot(self, ax=None):
         if ax is None:

@@ -151,8 +151,11 @@ def main():
     occupancy_grid = (img_cv == 0).astype(np.uint8)
 
     # npy
-    occupancy_npy_path = os.path.join(output_dir, "parking_layout.npy")
+    occupancy_npy_path = os.path.join(output_dir, "parking_obstacles.npy")
     np.save(occupancy_npy_path, occupancy_grid)
+
+    visual_npy_path = os.path.join(output_dir, "parking_decorations.npy")
+    np.save(visual_npy_path, (img_cv==120).astype(np.uint8))
 
     # json
     occupancy_json_path = os.path.join(output_dir, "parking_layout.json")
