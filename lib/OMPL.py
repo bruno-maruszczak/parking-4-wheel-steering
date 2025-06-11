@@ -1,7 +1,13 @@
 from ompl import base as ob
 from ompl import control as oc
 import matplotlib.pyplot as plt
+from enum import Enum
 import math
+
+class CarType(Enum):
+    bicycle = 0
+    fourws_one_side = 1
+    fourws_two_side = 2
 
 # ------------------ OMPL boiler‑plate (state space, dynamics) --------------
 class OMPL:
@@ -34,6 +40,15 @@ class OMPL:
         qdot[0] = v * math.cos(theta)
         qdot[1] = v * math.sin(theta)
         qdot[2] = v * math.tan(steer) / OMPL.WHEELBASE
+
+    def fourws_one_side_ode(self, q, u, qdot):
+        theta = q[2]
+        v = u[0]
+        sf = u[1]
+        n = u[2] # additional input from 0 to 1, scaling angle of the rear axis given the fron axis
+        qdot[0] = v * math.cos(theta)
+        qdot[1] = v * math.sin(theta)
+        qdot[2] = v * (math.tan(sf) - math.tan(n*sf)) / OMPL.WHEELBASE
 
     def fourws_ode(self, q, u, qdot):
         theta = q[2]
@@ -71,23 +86,41 @@ class OMPL:
     
     def create_planner(self, model: str, runtime: float = 60.0):
         space = self.make_space()
+        car_type = CarType[model]
         dim = 2 if model == "bicycle" else 3
         cspace = oc.RealVectorControlSpace(space, dim)
 
         cb = ob.RealVectorBounds(dim)
-        cb.setLow(0, -1.5)
-        cb.setHigh(0, 1.5)             # ±1.5 m/s
-        cb.setLow(1, -0.523)
-        cb.setHigh(1, 0.523)           # ±30° steering
-        if dim == 3:
-            cb.setLow(2, -0.523)
-            cb.setHigh(2, 0.523)
+        steering_angle = 0.523; velocity = 1.5
+        cb.setLow(0, -velocity)
+        cb.setHigh(0, velocity)             # ±1.5 m/s
+        cb.setLow(1, -steering_angle)
+        cb.setHigh(1, steering_angle)           # ±30° steering
+        
+        if car_type == CarType.fourws_one_side:
+            cb.setLow(2, 0)
+            cb.setHigh(2, 1)
+        elif car_type == CarType.fourws_two_side:
+            cb.setLow(2, -steering_angle)
+            cb.setHigh(2, steering_angle)
+
+        
         cspace.setBounds(cb)
 
         ss = oc.SimpleSetup(cspace)
         ss.setStateValidityChecker(ob.StateValidityCheckerFn(self.is_state_valid))
 
-        ode_fn = self.bicycle_ode if model == "bicycle" else self.fourws_ode
+        # Select ODE function based on CarType
+        if car_type == CarType.bicycle:
+            ode_fn = self.bicycle_ode
+        elif car_type == CarType.fourws_one_side:
+            ode_fn = self.fourws_one_side_ode
+        elif car_type == CarType.fourws_two_side:
+            ode_fn = self.fourws_ode
+        else:
+            raise ValueError("Unknown car type")
+
+
         solver = oc.ODEBasicSolver(ss.getSpaceInformation(), oc.ODE(ode_fn))
         ss.setStatePropagator(oc.ODESolver.getStatePropagator(solver))
 

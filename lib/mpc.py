@@ -10,7 +10,6 @@ class MPCModel:
         self.optimal_path = self.track.optimal_path
 
 
-        
         self.width = 1.0
         self.model = self.create_model()
         self.model.setup()
@@ -31,20 +30,6 @@ class MPCModel:
             self.rotational_inertia = data["rotational_inertia"]
             self.name = data["name"]
             self.mass = data["mass"]
-            self.length_f = data["length_f"]
-            self.length_r = data["length_r"]
-            self.width = data["width"]
-
-            self.B_f = data["frontTire"]["B_f"]
-            self.C_f = data["frontTire"]["C_f"]
-            
-            self.B_r = data["rearTire"]["B_r"]
-            self.C_r = data["rearTire"]["C_r"]
-
-            self.C_m = data["control"]["C_m"]
-            self.Cr_0 = data["Cr_0"]
-            self.Cr_2 = data["Cr_2"]
-            self.ptv = data["ptv"]
 
     def k(self, s):
         return self.optimal_path.find_curvature_at_s(s)
@@ -65,36 +50,6 @@ class MPCModel:
         # right_constraint_trunc = ca.if_else(right_constraint > NR, right_constraint - NR, 0.0)
 
         return left_constraint, right_constraint
-
-    def get_traction_ellipse_constraint(self, throttle, vx, vy, r, steering_angle, rho=1.0, alpha=1.0):
-        long = rho * 0.5 * self.get_motor_force(throttle)
-        af, ar = self.get_slip_angles(vx, vy, r, steering_angle)
-        Fy_f, Fy_r = self.get_lateral_forces(af, ar)
-        Df = alpha * self.D_f
-        Dr = alpha * self.D_r
-        ellipse_f = long*long + Fy_f*Fy_f - Df*Df
-        ellipse_r = long*long + Fy_r*Fy_r - Dr*Dr
-
-        # TODO what are these for?
-        # ellipse_f_trunc = ca.if_else(ellipse_f > 0.0, ellipse_f, 0.0)
-        # ellipse_r_trunc = ca.if_else(ellipse_r > 0.0, ellipse_r, 0.0)
-
-        return ellipse_f, ellipse_r
-
-    def get_slip_angles(self, vx, vy, r, steering_angle):
-        alpha_f = ca.atan2((vy + self.length_f*r),vx) - steering_angle
-        alpha_r = ca.atan2((vy - self.length_r*r),vx)
-        return alpha_f, alpha_r
-
-    def get_lateral_forces(self, alpha_f, alpha_r):
-        Fn_f = self.length_r * self.mass * self.g / (self.length_f + self.length_r)
-        Fn_r = self.length_f * self.mass * self.g / (self.length_f + self.length_r)
-
-        # Fy_f = Fn_f * self.D_f * ca.sin(self.C_f * ca.atan(self.B_f * alpha_f))
-        # Fy_r = Fn_r * self.D_r * ca.sin(self.C_r * ca.atan(self.B_r * alpha_r))
-        Fy_f = -Fn_f * self.D_f * ca.sin(self.C_f * ca.atan(self.B_f * alpha_f))
-        Fy_r = -Fn_r * self.D_r * ca.sin(self.C_r * ca.atan(self.B_r * alpha_r))
-        return Fy_f, Fy_r
     
     def get_motor_force(self, throttle):
         return self.C_m * throttle
@@ -133,18 +88,6 @@ class MPCModel:
         throttle_change = model.set_variable('_u', 'throttle_change', shape=(1,1))
 
         sdot = (vx*ca.cos(mu) - vy*ca.sin(mu)) / (1 - n * self.k(s))
-        
-        # Tires
-
-        alpha_f, alpha_r = self.get_slip_angles(vx, vy, r, steering_angle)
-
-        Fy_f, Fy_r = self.get_lateral_forces(alpha_f, alpha_r)
-        
-        Fx =  self.get_motor_force(throttle) - self.Cr_0 - self.Cr_2 * vx * vx
-
-        rt = (ca.tan(steering_angle)*vx)/(self.length_f + self.length_r)
-        #Mtv = self.ptv * (rt - r)
-        Mtv = 0.0
 
         model.set_rhs('s', sdot)
         model.set_rhs('n', 
@@ -153,15 +96,7 @@ class MPCModel:
         model.set_rhs('mu',
             r - self.k(s)*sdot                    
         )
-        model.set_rhs('vx',
-            (1.0 / self.mass) * (Fx - Fy_f * ca.sin(steering_angle) + self.mass * vy * r)
-        )
-        model.set_rhs('vy', 
-            (1.0 / self.mass) * (Fy_r + Fy_f * ca.cos(steering_angle) - self.mass * vx * r)
-        )
-        model.set_rhs('r',
-            (1.0 / self.rotational_inertia) * (Fy_f * self.length_f * ca.cos(steering_angle) - Fy_r * self.length_r + Mtv)
-        )
+
         model.set_rhs('throttle', throttle_change)
         model.set_rhs('steering_angle', steering_angle_change)
         
