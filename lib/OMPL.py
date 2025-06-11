@@ -3,6 +3,7 @@ from ompl import control as oc
 import matplotlib.pyplot as plt
 from enum import Enum
 import math
+import json
 
 class CarType(Enum):
     bicycle = 0
@@ -35,7 +36,7 @@ class OMPL:
 
     def bicycle_ode(self,q, u, qdot):
         theta = q[2]
-        v = u[0]
+        v = 1
         steer = u[1]
         qdot[0] = v * math.cos(theta)
         qdot[1] = v * math.sin(theta)
@@ -43,7 +44,7 @@ class OMPL:
 
     def fourws_one_side_ode(self, q, u, qdot):
         theta = q[2]
-        v = u[0]
+        v = 1
         sf = u[1]
         n = u[2] # additional input from 0 to 1, scaling angle of the rear axis given the fron axis
         qdot[0] = v * math.cos(theta)
@@ -52,7 +53,7 @@ class OMPL:
 
     def fourws_ode(self, q, u, qdot):
         theta = q[2]
-        v = u[0]
+        v = 1
         sf = u[1]
         sr = u[2]
         qdot[0] = v * math.cos(theta)
@@ -155,9 +156,32 @@ class OMPL:
 
         path = ss.getSolutionPath()
         path.interpolate()
-        coords = [(st.getX(), st.getY(), st.getYaw()) for st in path.getStates()]
+        coords = [[st.getX(), st.getY(), st.getYaw()] for st in path.getStates()]
+        controls_fr = []; controls_rear = []
+        for ctrl in path.getControls(): 
+            controls_fr.append(ctrl[0])  
+            if car_type == CarType.fourws_one_side or car_type == CarType.fourws_two_side:
+                controls_rear.append(ctrl[1])
+
         length = sum(
             math.hypot(coords[i][0] - coords[i - 1][0], coords[i][1] - coords[i - 1][1])
             for i in range(1, len(coords))
         )
+
+        self.save_path(car_type, coords, length, controls_fr, controls_rear)
+
         return coords, length
+    
+    def save_path(self, car_type, coords, length, controls_fr, controls_rear):
+        path_to_file = "./data/out/" + str(car_type.name) + "_path.json"
+        result = {
+            "car type": car_type.name,
+            "length": length,
+            "x": [c[0] for c in coords],
+            "y": [c[1] for c in coords],
+            "control_fr": [ctrl for ctrl in controls_fr],  
+            "control_rear": [ctrl for ctrl in controls_rear]  
+        }
+
+        with open(path_to_file, "w") as f:
+            json.dump(result, f, indent=2)

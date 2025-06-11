@@ -22,10 +22,11 @@ def main():
     ompl = OMPL(plot_bounds, car, parking_lot_bitmap)
     
     colours = {"bicycle": "deepskyblue", "fourws_one_side": "orange", "fourws_two_side": "black"}
-    results = {m: ompl.create_planner(m) for m in ("bicycle", "fourws_one_side", "fourws_two_side")}
+    results = ompl.create_planner("fourws_one_side") 
 
-    plot = Plot(parking_lot_bitmap, results, plot_bounds, colours, car)
-    plot.static_plot(Path(os.getcwd()).joinpath("data/out/parking_paths.png"))
+
+    # plot = Plot(parking_lot_bitmap, results, plot_bounds, colours, car)
+    # plot.static_plot(Path(os.getcwd()).joinpath("data/out/parking_paths.png"))
     # plot.animate(Path(os.getcwd()).joinpath("data/out/parking_animation.gif"), order=["bicycle", "fourws_one_side", "fourws_two_side"])
 
 
