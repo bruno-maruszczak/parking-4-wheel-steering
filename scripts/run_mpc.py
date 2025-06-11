@@ -64,7 +64,13 @@ def main():
         last_step = i
 
     with open(Path(os.getcwd()).joinpath('data/out/mpc_results.json'), 'w') as f:
-        data = {'x': X[:last_step].tolist(), 'y': Y[:last_step].tolist(), 'u': U[:last_step].tolist()}
+        data = {
+            's':        [float(x[0]) for x in X[:last_step]],
+            'n':        [float(x[1]) for x in X[:last_step]],
+            'mu':       [float(x[2]) for x in X[:last_step]],
+            'v':        [float(x[3]) for x in X[:last_step]],
+            'steer':    [float(x[4]) for x in X[:last_step]]
+        }
         json.dump(data, f)
 
 
