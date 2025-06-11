@@ -9,6 +9,11 @@ class Plot:
         self.colours = colours
         self.car = car
 
+    def experimental_plot():
+        img = plt.imread("./data/map/parking_layout.png")
+        plt.imshow(img)
+        plt.show()
+
     def static_plot(self, filename='parking_paths.png'):
         for m, (_, L) in self.results.items():
             print(f"{m} path length ≈ {L:.2f} m")
@@ -19,9 +24,9 @@ class Plot:
         ax.set_ylim(self.plot_bounds[2], self.plot_bounds[3])
         ax.set_xlabel('x [m]'); ax.set_ylabel('y [m]'); ax.grid(False)
 
-        # for slot in self.parking_lot.slot_lines:
-        #     x, y = slot.exterior.xy
-        #     ax.plot(x, y, color="#aaaaaa", linewidth=1)
+        for slot in self.parking_lot.slot_lines:
+            x, y = slot.exterior.xy
+            ax.plot(x, y, color="#aaaaaa", linewidth=1)
 
         for obs in self.parking_lot.obstacles:
             x, y = obs.exterior.xy
@@ -85,3 +90,5 @@ class Plot:
             plt.show()
         except Exception:
             print('Headless backend: static PNG and GIF saved.')
+
+    
