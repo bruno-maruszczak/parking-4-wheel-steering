@@ -18,11 +18,12 @@ class MPC:
         self.read_path(filepath)
         S, K = self.calculate_curvature()
         self.k = ca.interpolant("curvature", "linear", [S], K)
-        self.x_interp = ca.interpolant("x", "bspline", [S], self.x)
-        self.y_interp = ca.interpolant("y", "bspline", [S], self.y)
-        p_interp = ca.vertcat(self.x_interp, self.y_interp)
+
+        values = ca.DM([self.x, self.y])
+        self.p_interp = ca.interpolant("p", "bspline", [self.S], values)
+        
         s = ca.MX.sym('s')
-        tangent = ca.jacobian(p_interp(s), s)     # exact dp/ds
+        tangent = ca.jacobian(self.p_interp(s), s)     # exact dp/ds
         normal = ca.vertcat(-tangent[1], tangent[0])
         unit_normal = normal / ca.norm_2(normal)
         self.normal_vector_interp = ca.Function('normal', [s], [unit_normal])
