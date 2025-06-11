@@ -11,7 +11,9 @@ from lib.mpc import MPC
 def main(): 
     print("Loading trajectory...")
     planned_path = Path(os.getcwd()).joinpath("data/out/fourws_one_side_path.json")
-
+    with open(planned_path, "r") as f:
+        data = json.load(f)
+    path_length = data["length"]
     print("Loading vehicle model...")
     mpc = MPC(planned_path)
 
@@ -44,6 +46,7 @@ def main():
     print("Running simulation...")
     last_s = x0[0]
     x, u = x0, u0
+    last_step = 0
     for i in range(1, steps + 1):
         print(f"\n--- STEP {i:4d} ---")
         u = controller.make_step(x)
@@ -52,12 +55,15 @@ def main():
         X[i] = x
         Y[i] = y
         U[i] = u
-
+        if x[0] - path_length > 0.1:
+            print("Reached end of path, stopping simulation.")
+            last_step = i
+            break
         print(f"sdot {(x[0] - last_s) / MPC.T_STEP}")
         last_s = x[0]
 
     with open(Path(os.getcwd()).joinpath('data/out/mpc_results.json'), 'w') as f:
-        data = {'x': X.tolist(), 'y': Y.tolist(), 'u': U.tolist()}
+        data = {'x': X[:last_step].tolist(), 'y': Y[:last_step].tolist(), 'u': U[:last_step].tolist()}
         json.dump(data, f)
 
 
