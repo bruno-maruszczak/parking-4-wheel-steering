@@ -74,7 +74,7 @@ class MPC:
         
     def sdot(self):
         x = self.model.x
-        sdot = (x['vx']*ca.cos(x['mu']) - x['vy']*ca.sin(x['mu'])) / (1 - x['n'] * self.k(x['s']))
+        sdot = x['velocity']*ca.cos(x['steering_angle']/2 - x['mu']) / (1 - x['n'] * self.k(x['s']))
         return sdot
 
     def create_model(self) -> do_mpc.model.Model:
@@ -107,7 +107,7 @@ class MPC:
 
     def set_objective(
             self,
-            control_costs=[0.1, 0.1],
+            control_costs=np.array([[0.1], [0.1]]),
             q_n = 1.0,
             q_mu = 1.0,
             q_B = 1.0
@@ -120,12 +120,11 @@ class MPC:
         self.controller.set_rterm(**r_term) 
 
         # State costs
-        sdot = self.model.sdot()
+        sdot = self.sdot()
         s = self.model.x['s']
         n = self.model.x['n']
         mu = self.model.x['mu']
-        vx = self.model.x['vx']
-        vy = self.model.x['vy']
+
         # vref = self.model.track.velocities_interp(s)
         mterm = q_n*(n**2)
         lterm = mterm + (sdot - 1)**2
@@ -138,22 +137,24 @@ class MPC:
         # mu = self.model.x['mu']
         # self.mpc.set_nl_cons('obstacle_dist_cons', self.obstacle_dist_interp(s, n, mu), 0.)
 
-        self.controller.bounds['lower', '_x', 's'] = 0.
-        self.controller.bounds['lower', '_x', 'mu'] = -np.pi*0.5
-        self.controller.bounds['lower', '_x', 'vx'] = 0. 
-        self.controller.bounds['lower', '_x', 'steering_angle'] = -np.pi/4
-        self.controller.bounds['lower', '_x', 'throttle'] = -1
+        TAU = 2*np.pi
 
-        self.controller.bounds['upper', '_x', 'mu'] = np.pi*0.5 
-        self.controller.bounds['upper', '_x', 'steering_angle'] = np.pi/4
-        self.controller.bounds['upper', '_x', 'throttle'] = 1
+        self.controller.bounds['lower', '_x', 's'] = 0.
+        self.controller.bounds['lower', '_x', 'mu'] = -TAU/4
+        self.controller.bounds['upper', '_x', 'mu'] = TAU/4 
+
+        self.controller.bounds['lower', '_x', 'steering_angle'] = -TAU/8
+        self.controller.bounds['upper', '_x', 'steering_angle'] = TAU/8
+
+        self.controller.bounds['lower', '_x', 'velocity'] = 0
+        self.controller.bounds['upper', '_x', 'velocity'] = 1
 
         # INPUT
-        self.controller.bounds['lower', '_u', 'steering_angle_change'] = -2*np.pi/4
-        self.controller.bounds['lower', '_u', 'throttle_change'] = -1 
+        self.controller.bounds['lower', '_u', 'steering_angle_change'] = -TAU/4
+        self.controller.bounds['lower', '_u', 'acceleration'] = -1 
 
-        self.controller.bounds['upper', '_u', 'steering_angle_change'] = 2*np.pi/4
-        self.controller.bounds['upper', '_u', 'throttle_change'] = 1
+        self.controller.bounds['upper', '_u', 'steering_angle_change'] = TAU/4
+        self.controller.bounds['upper', '_u', 'acceleration'] = 1
 
 
 
