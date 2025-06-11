@@ -1,6 +1,8 @@
 import json
 import numpy as np
 import casadi as ca
+import matplotlib.pyplot as plt
+
 
 
 class MPC_plot:
@@ -28,18 +30,35 @@ class MPC_plot:
             self.reference_data = json.load(f)
 
     def create_mpc_path(self):
-
+        x_not_shifted = []; y_not_shifted = []
         x_list = []; y_list = []
         for s, n in zip (self.mpc_results['s'], self.mpc_results['n']) :
             p = self.p_interp(s)
-            x = p[0]
-            y = p[1]
+            x = float(p[0])
+            y = float(p[1])
+            x_not_shifted.append(x); y_not_shifted.append(y)
 
             normal_shift = self.normal_vector_interp(s)*n
 
-            print(normal_shift)
-            x_list.append(normal_shift[0] + x)
-            y_list.append(normal_shift[1] + y)
+            # print(normal_shift)
+            x_list.append(float(normal_shift[0]) + x)
+            y_list.append(float(normal_shift[1]) + y)
+
+        print(x_not_shifted)
+
+        # Plot x values
+        plt.figure()
+        plt.plot(x_not_shifted, y_not_shifted, label='Not shifted')
+        plt.plot(x_list, y_list, label='Shifted')
+        x = self.reference_data['x']
+        y = self.reference_data['y']
+        plt.plot(x,y, label='Reference')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+        plt.title('MPC Path Comparison')
+        plt.show()
+
 
     
 
