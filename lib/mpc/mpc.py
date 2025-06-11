@@ -14,8 +14,11 @@ class MPCModel:
         self.engine_power = 1000.
 
         self.read_path()
-        self.calculate_curvature()
-
+        S, K = self.calculate_curvature()
+        self.curvature = ca.interpolant(
+            "curvature", "linear", [S],
+            K
+        )
         self.model = self.create_model()
         self.model.setup()
 
@@ -36,16 +39,21 @@ class MPCModel:
 
         S = []  # list of distances from beginning to the point
         K = []  # list of curvatures in all points
-        s = 0
-        for x, y, control_f, control_r in zip(self.x, self.y, self.control_fr, self.control_rear):
+        s = delta / 2  # start at the middle of the first segment
+        for i, control_f, control_r in zip(range(N-1),self.control_fr, self.control_rear):
             angle = control_f #- control_r
             s += delta
             if angle < 0.1: 
                 k = 0
             else:
                 k = np.tan(angle) / 2.7   # TODO: find the correct equation for R and then K
+            if i == 0:
+                S.append(0)
+                K.append(k)
             S.append(s)
             K.append(k)
+        return S, K
+        
 
     def find_curvature_at_s(self, s):
         pass
