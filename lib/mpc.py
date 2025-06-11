@@ -19,8 +19,9 @@ class MPC:
         S, K = self.calculate_curvature()
         self.k = ca.interpolant("curvature", "linear", [S], K)
 
-        values = ca.DM([self.x, self.y])
-        self.p_interp = ca.interpolant("p", "bspline", [S], values)
+        values = [self.x, self.y]
+        values_flat = np.column_stack((self.x, self.y)).ravel(order="F")
+        self.p_interp = ca.interpolant("p", "bspline", [S], values_flat, {})
         
         
 
@@ -62,7 +63,7 @@ class MPC:
 
         S = []  # list of distances from beginning to the point
         K = []  # list of curvatures in all points
-        s = delta / 2  # start at the middle of the first segment
+        s : float = delta / 2  # start at the middle of the first segment
         for i, control_f, control_r in zip(range(N-1),self.control_fr, self.control_rear):
             angle = control_f #- control_r
             s += delta
@@ -71,7 +72,7 @@ class MPC:
             else:
                 k = np.tan(angle) / 2.7   # TODO: find the correct equation for R and then K
             if i == 0:
-                S.append(0)
+                S.append(0.)
                 K.append(k)
             S.append(s)
             K.append(k)

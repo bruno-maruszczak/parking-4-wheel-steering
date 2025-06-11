@@ -15,7 +15,7 @@ class MPC_plot:
         self.normal_vector_interp = ca.Function('normal', [s], [unit_normal])
 
         self.read_files()
-
+        self.create_mpc_path()
         
 
 
@@ -31,13 +31,17 @@ class MPC_plot:
 
         x_list = []; y_list = []
         for s, n in zip (self.mpc_results['s'], self.mpc_results['n']) :
-            x,y = self.p_interp(s)
+            p = self.p_interp(s)
+            x = p[0]
+            y = p[1]
 
             normal_shift = self.normal_vector_interp(s)*n
 
             print(normal_shift)
             x_list.append(normal_shift[0] + x)
             y_list.append(normal_shift[1] + y)
+
+    
 
 
 
