@@ -4,12 +4,12 @@ import casadi as ca
 import json
 
 
-class MPCModel:
+class MPC:
     T_STEP = 0.1  # seconds
     N_HORIZON = 20  # number of steps in the horizon
     N_ROBUST = 0  # number of robust steps (for robust MPC, not used here)
 
-    def __init__(self):
+    def __init__(self, filepath="./data/out/fourws_one_side_path.json"):
         self.rotational_inertia = 1000.
         self.mass = 1000.
         self.length_f = 1.5
@@ -17,7 +17,7 @@ class MPCModel:
         self.width = 2.3
         self.engine_power = 1000.
 
-        self.read_path()
+        self.read_path(filepath)
         S, K = self.calculate_curvature()
         self.k = ca.interpolant(
             "curvature", "linear", [S],
@@ -28,22 +28,26 @@ class MPCModel:
 
         self.controller = do_mpc.controller.MPC(self.model)
         self.controller._settings.store_full_solution = False
-        self.controller._settings.t_step = MPCModel.T_STEP
-        self.controller._settings.n_horizon = MPCModel.N_HORIZON
-        self.controller._settings.n_robust = MPCModel.N_ROBUST
+        self.controller._settings.t_step = MPC.T_STEP
+        self.controller._settings.n_horizon = MPC.N_HORIZON
+        self.controller._settings.n_robust = MPC.N_ROBUST
         self.controller._settings.nlpsol_opts['ipopt.max_iter'] = 1000
         self.controller._settings.nlpsol_opts['ipopt.print_level'] = 0
         # self.controller._settings.supress_ipopt_output()
-
         self.set_constraints()
         self.set_objective()
 
         self.controller._check_validity()
         self.controller.setup()
 
-    def read_path(self):
-        path_file = "./data/out/fourws_one_side_path.json"  # lub inna ścieżka do pliku
-        with open(path_file, "r") as f:
+        self.simulator = do_mpc.simulator.Simulator(self.model)
+        self.simulator._settings.t_step = MPC.T_STEP
+        self.simulator.setup()
+
+        self.estimator = do_mpc.estimator.StateFeedback(self.model)
+
+    def read_path(self, filepath):
+        with open(filepath, "r") as f:
             data = json.load(f)
         self.x = data["x"]
         self.y = data["y"]
