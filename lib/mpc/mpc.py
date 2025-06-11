@@ -15,12 +15,37 @@ class MPCModel:
 
         self.read_path()
         S, K = self.calculate_curvature()
-        self.curvature = ca.interpolant(
+        self.k = ca.interpolant(
             "curvature", "linear", [S],
             K
         )
         self.model = self.create_model()
         self.model.setup()
+        self.model = model
+        self.mpc_model = self.model.model
+        self.t_step = t_step
+        self.mpc = do_mpc.controller.MPC(self.mpc_model)
+        self.mpc._settings.store_full_solution = False
+        self.mpc._settings.t_step = t_step
+        self.mpc._settings.n_horizon = n_horizon
+        self.mpc._settings.n_robust = n_robust
+        self.mpc._settings.nlpsol_opts['ipopt.max_iter'] = 1000
+        self.mpc._settings.nlpsol_opts['ipopt.print_level'] = 0
+        # self.mpc._settings.supress_ipopt_output()
+
+        # rho determines the shape of the friction ellipse constraint
+        # alpha determines the maximum combined force. (the size of the ellipse)
+        alpha, rho = 1.0, 1.0
+
+        # q_n is a cost for deviating from the optimal path (in perpendicular to path direction)
+        # q_mu is a cost for a heading that deviates from the optimal path
+        # q_B penalizes the difference between the kinematic and dynamic side slip angle.
+        q_n, q_mu, q_B = 0.5, 3.0, 1e-2
+        self.set_constraints(rho, alpha)
+        self.set_objective(control_costs, q_n, q_mu, q_B)
+
+        self.mpc._check_validity()
+        self.mpc.setup()
 
     def read_path(self):
         path_file = "./data/out/fourws_one_side_path.json"  # lub inna ścieżka do pliku
@@ -32,7 +57,6 @@ class MPCModel:
         self.control_fr = data["control_fr"]
         self.control_rear = data["control_rear"]
         
-    
     def calculate_curvature(self):
         N = len(self.x)
         delta = self.length / N
@@ -54,21 +78,10 @@ class MPCModel:
             K.append(k)
         return S, K
         
-
-    def find_curvature_at_s(self, s):
-        pass
-
-    def k(self, s):
-        return self.find_curvature_at_s(s)
-    
-    def get_motor_force(self, throttle):
-        return self.C_m * throttle
-
     def sdot(self):
         x = self.model.x
         sdot = (x['vx']*ca.cos(x['mu']) - x['vy']*ca.sin(x['mu'])) / (1 - x['n'] * self.k(x['s']))
         return sdot
-
 
     def create_model(self) -> do_mpc.model.Model:
         """
@@ -107,34 +120,6 @@ class MPCModel:
         
         return model
     
-class Controller:
-    def __init__(self, model : VehicleModel, control_costs : ArrayLike, n_horizon : int = 10, t_step : float = 0.1, n_robust : int = 0):
-        self.model = model
-        self.mpc_model = self.model.model
-        self.t_step = t_step
-        self.mpc = do_mpc.controller.MPC(self.mpc_model)
-        self.mpc._settings.store_full_solution = False
-        self.mpc._settings.t_step = t_step
-        self.mpc._settings.n_horizon = n_horizon
-        self.mpc._settings.n_robust = n_robust
-        self.mpc._settings.nlpsol_opts['ipopt.max_iter'] = 1000
-        self.mpc._settings.nlpsol_opts['ipopt.print_level'] = 0
-        # self.mpc._settings.supress_ipopt_output()
-
-        # rho determines the shape of the friction ellipse constraint
-        # alpha determines the maximum combined force. (the size of the ellipse)
-        alpha, rho = 1.0, 1.0
-
-        # q_n is a cost for deviating from the optimal path (in perpendicular to path direction)
-        # q_mu is a cost for a heading that deviates from the optimal path
-        # q_B penalizes the difference between the kinematic and dynamic side slip angle.
-        q_n, q_mu, q_B = 0.5, 3.0, 1e-2
-        self.set_constraints(rho, alpha)
-        self.set_objective(control_costs, q_n, q_mu, q_B)
-
-        self.mpc._check_validity()
-        self.mpc.setup()
-
     def set_objective(self, control_costs, q_n = 1.0, q_mu = 1.0, q_B = 1.0):
         u_dim = len(self.mpc_model.u.labels())
         assert (control_costs.shape == (u_dim, 1))
@@ -203,4 +188,6 @@ class Controller:
         # Upper input bounds
         self.mpc.bounds['upper', '_u', 'steering_angle_change'] = 2*np.pi/4
         self.mpc.bounds['upper', '_u', 'throttle_change'] = 1
+
+
 
