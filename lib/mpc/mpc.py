@@ -1,6 +1,7 @@
 import do_mpc
 import numpy as np
 import casadi as ca
+import json
 
 
 class MPCModel:
@@ -11,12 +12,46 @@ class MPCModel:
         self.length_r = 1.5
         self.width = 2.3
         self.engine_power = 1000.
-        self.optimal_path = self.track.optimal_path
+
+        self.read_path()
+        self.calculate_curvature()
+
         self.model = self.create_model()
         self.model.setup()
 
+    def read_path(self):
+        path_file = "./data/out/fourws_one_side_path.json"  # lub inna ścieżka do pliku
+        with open(path_file, "r") as f:
+            data = json.load(f)
+        self.x = data["x"]
+        self.y = data["y"]
+        self.length = data["length"]
+        self.control_fr = data["control_fr"]
+        self.control_rear = data["control_rear"]
+        
+    
+    def calculate_curvature(self):
+        N = len(self.x)
+        delta = self.length / N
+
+        S = []  # list of distances from beginning to the point
+        K = []  # list of curvatures in all points
+        s = 0
+        for x, y, control_f, control_r in zip(self.x, self.y, self.control_fr, self.control_rear):
+            angle = control_f #- control_r
+            s += delta
+            if angle < 0.1: 
+                k = 0
+            else:
+                k = np.tan(angle) / 2.7   # TODO: find the correct equation for R and then K
+            S.append(s)
+            K.append(k)
+
+    def find_curvature_at_s(self, s):
+        pass
+
     def k(self, s):
-        return self.optimal_path.find_curvature_at_s(s)
+        return self.find_curvature_at_s(s)
     
     def get_motor_force(self, throttle):
         return self.C_m * throttle
