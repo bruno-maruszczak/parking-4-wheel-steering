@@ -26,7 +26,7 @@ def main():
 
     plot = Plot(parking_lot_bitmap, results, plot_bounds, colours, car)
     plot.static_plot(Path(os.getcwd()).joinpath("data/out/parking_paths.png"))
-    plot.animate(Path(os.getcwd()).joinpath("data/out/parking_animation.gif"), order=["bicycle", "fourws_one_side", "fourws_two_side"])
+    # plot.animate(Path(os.getcwd()).joinpath("data/out/parking_animation.gif"), order=["bicycle", "fourws_one_side", "fourws_two_side"])
 
 
 if __name__ == "__main__":

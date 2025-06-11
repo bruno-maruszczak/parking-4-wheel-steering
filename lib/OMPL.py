@@ -135,18 +135,18 @@ class OMPL:
         start_y = 6.0
         start().setX(start_x)
         start().setY(start_y)  # just below the first row
-        start().setYaw(math.pi * 0.95)  # facing "up"
+        start().setYaw(math.pi * 0 )  # facing "right" (east)
 
         # goal_cx = - (self.parking_lot.N_SPOTS / 2 - 0.5 - self.parking_lot.GOAL_COL) * self.parking_lot.SLOT_W
         # goal_cy = self.parking_lot.ROWS_Y[self.parking_lot.GOAL_ROW]
-        goal_cx = 37
-        goal_cy = 2.5
+        goal_cx = 23
+        goal_cy = 17.5
         goal = ob.State(space)
         goal().setX(goal_cx)
         goal().setY(goal_cy)
-        goal().setYaw(math.pi)
+        goal().setYaw(0)
 
-        ss.setStartAndGoalStates(start, goal, 0.25)
+        ss.setStartAndGoalStates(start, goal, 0.1)
         ss.getProblemDefinition().setOptimizationObjective(ob.PathLengthOptimizationObjective(si))
         ss.setPlanner(oc.SST(si))
 
