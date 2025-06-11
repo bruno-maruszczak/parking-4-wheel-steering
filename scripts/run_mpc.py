@@ -22,9 +22,9 @@ def main():
 
     print("Initializing state...")
     s0, n0, mu0 = 0., 0., 0.
-    vx0, vy0, r0 = 5.0, 0.0, 0.
+    v0 = 0.0
     steer_angle0, throttle0 = 0., 0.1
-    x0 = np.reshape([s0, n0, mu0, vx0, vy0, r0, steer_angle0, throttle0], (-1, 1))
+    x0 = np.reshape([s0, n0, mu0, v0, steer_angle0], (-1, 1))
     u0 = np.array([[0.0], [0.0]])
 
     controller.x0 = x0 

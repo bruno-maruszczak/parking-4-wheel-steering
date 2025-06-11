@@ -88,9 +88,9 @@ class MPC:
         s = model.set_variable("_x", 's', shape=(1,1))
         n = model.set_variable("_x", 'n', shape=(1,1))
         mu = model.set_variable("_x", 'mu', shape=(1,1))
-
-        steering_angle = model.set_variable('_x', 'steering_angle', shape=(1,1))
         v = model.set_variable('_x', 'velocity', shape=(1,1))
+        steering_angle = model.set_variable('_x', 'steering_angle', shape=(1,1))
+
 
         steering_angle_change = model.set_variable('_u', 'steering_angle_change', shape=(1,1))
         acceleration = model.set_variable('_u', 'acceleration', shape=(1,1))
