@@ -13,3 +13,4 @@ pip install -e .
 ```sh
 map_generate
 ```
+![Process is processing](./data/assets/splash.png)
