@@ -92,7 +92,7 @@ class OMPL:
 
         cb = ob.RealVectorBounds(dim)
         steering_angle = 0.523; velocity = 1.5
-        cb.setLow(0, -velocity)
+        cb.setLow(0, 0)
         cb.setHigh(0, velocity)             # ±1.5 m/s
         cb.setLow(1, -steering_angle)
         cb.setHigh(1, steering_angle)           # ±30° steering
