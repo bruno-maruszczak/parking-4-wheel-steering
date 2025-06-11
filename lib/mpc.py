@@ -20,13 +20,9 @@ class MPC:
         self.k = ca.interpolant("curvature", "linear", [S], K)
 
         values = ca.DM([self.x, self.y])
-        self.p_interp = ca.interpolant("p", "bspline", [self.S], values)
+        self.p_interp = ca.interpolant("p", "bspline", [S], values)
         
-        s = ca.MX.sym('s')
-        tangent = ca.jacobian(self.p_interp(s), s)     # exact dp/ds
-        normal = ca.vertcat(-tangent[1], tangent[0])
-        unit_normal = normal / ca.norm_2(normal)
-        self.normal_vector_interp = ca.Function('normal', [s], [unit_normal])
+        
 
         self.model = self.create_model()
         self.model.setup()

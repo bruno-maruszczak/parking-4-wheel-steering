@@ -1,22 +1,43 @@
 import json
 import numpy as np
+import casadi as ca
 
 
-# Wczytaj plik z wynikami MPC
-with open("data/out/mpc_results.json", "r") as f:
-    mpc_results = json.load(f)
+class MPC_plot:
+    def __init__(self, p_interp : ca.interpolant):
 
-# Wczytaj plik z trajektorią referencyjną
-with open("data/out/fourws_one_side_path.json", "r") as f:
-    reference_path = json.load(f)
+        self.p_interp = p_interp
+        
+        s = ca.MX.sym('s')
+        tangent = ca.jacobian(p_interp(s), s)     # exact dp/ds
+        normal = ca.vertcat(-tangent[1], tangent[0])
+        unit_normal = normal / ca.norm_2(normal)
+        self.normal_vector_interp = ca.Function('normal', [s], [unit_normal])
 
-print(mpc_results['s'])
+        self.read_files()
 
-print(len(reference_path['x']))
+        
 
 
-# x = f(s,n)
-# y = g(s,n)
+    def read_files(self):
 
-# fourws_one_side_path.json
-# x y contr_front contr_rear
+        with open("data/out/mpc_results.json", "r") as f:
+            self.mpc_results = json.load(f)
+
+        with open("data/out/fourws_one_side_path.json", "r") as f:
+            self.reference_data = json.load(f)
+
+    def create_mpc_path(self):
+
+        x_list = []; y_list = []
+        for s, n in zip (self.mpc_results['s'], self.mpc_results['n']) :
+            x,y = self.p_interp(s)
+
+            normal_shift = self.normal_vector_interp(s)*n
+
+            print(normal_shift)
+            x_list.append(normal_shift[0] + x)
+            y_list.append(normal_shift[1] + y)
+
+
+
