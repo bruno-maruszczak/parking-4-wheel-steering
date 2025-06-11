@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 
 
 class MPC_plot:
-    def __init__(self, p_interp : ca.interpolant):
-
-        self.p_interp = p_interp
+    def __init__(self, p_interp : ca.interpolant, sym : ca.MX.sym):
+        s = sym
+        self.p_interp = ca.Function('point', [s], [p_interp])
         
-        s = ca.MX.sym('s')
-        tangent = ca.jacobian(p_interp(s), s)     # exact dp/ds
+        tangent = ca.jacobian(p_interp, s)     # exact dp/ds
         normal = ca.vertcat(-tangent[1], tangent[0])
         unit_normal = normal / ca.norm_2(normal)
         self.normal_vector_interp = ca.Function('normal', [s], [unit_normal])
@@ -32,7 +31,7 @@ class MPC_plot:
     def create_mpc_path(self):
         x_not_shifted = []; y_not_shifted = []
         x_list = []; y_list = []
-        for s, n in zip (self.mpc_results['s'], self.mpc_results['n']) :
+        for s, n in zip(self.mpc_results['s'], self.mpc_results['n']):
             p = self.p_interp(s)
             x = float(p[0])
             y = float(p[1])

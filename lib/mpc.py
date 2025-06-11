@@ -20,8 +20,14 @@ class MPC:
         self.k = ca.interpolant("curvature", "linear", [S], K)
 
         values = [self.x, self.y]
-        values_flat = np.column_stack((self.x, self.y)).ravel(order="F")
-        self.p_interp = ca.interpolant("p", "bspline", [S], values_flat, {})
+        self.sym = ca.MX.sym('s')
+        self.x_interp = ca.interpolant("x", "linear", [S], self.x)
+        self.y_interp = ca.interpolant("y", "linear", [S], self.y)
+
+        self.p_interp = ca.vertcat(self.x_interp(self.sym), self.y_interp(self.sym))
+
+        # values_flat = np.column_stack((self.x, self.y)).ravel(order="F")
+        # self.p_interp = ca.interpolant("p", "bspline", [S], values_flat, {})
         
         
 
@@ -66,7 +72,7 @@ class MPC:
         s : float = delta / 2  # start at the middle of the first segment
         for i, control_f, control_r in zip(range(N-1),self.control_fr, self.control_rear):
             angle = control_f #- control_r
-            s += delta
+            s = i*delta + delta / 2
             if angle < 0.1: 
                 k = 0
             else:

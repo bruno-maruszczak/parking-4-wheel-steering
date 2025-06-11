@@ -75,7 +75,7 @@ def main():
     #     json.dump(data, f)
 
 
-    MPC_plot(mpc.p_interp)
+    MPC_plot(mpc.p_interp, mpc.sym)
 
 
 if __name__ == "__main__":
